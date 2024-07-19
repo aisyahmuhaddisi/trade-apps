@@ -1,188 +1,83 @@
 import useWebSocket from '@/hooks/useWebSocket';
 import { Ionicons } from '@expo/vector-icons'
-import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
-import { WebView } from 'react-native-webview';
+import { View, Text, StyleSheet, ScrollView, ViewStyle, TextStyle } from 'react-native'
 
-const HighchartsComponent = (props) => {
-    const colorTemplate =
-        '{#ge point.open point.close}#ff6e6e{else}#51af7b{/ge}';
-    const chartOptions = {
-        lang: {
-            accessibility: {
-                defaultChartTitle: 'AAPL Stock Price'
-            }
-        },
-        legend: {
-            enabled: true
-        },
-        xAxis: {
-            crosshair: {
-                enabled: true
-            },
-            ordinal: false,
-            type: 'datetime',
-        },
-        yAxis: {
-            title: {
-                text: 'price (USD)'
-            },
-            crosshair: {
-                snap: false,
-                label: {
-                    enabled: false,
-                    format: '{value:.2f}',
-                },
-                enabled: true
-            },
-            labels: {
-                align: 'left'
-            },
-        },
-        plotOptions: {
-            candlestick: {
-                color: 'pink',
-                lineColor: 'red',
-                upColor: 'lightgreen',
-                upLineColor: 'green',
-            },
-            series: {
-                stickyTracking: true
-            }
-        },
-        chart: {
-            height: '100%',
-        },
-        rangeSelector: {
-            enabled: false,
-        },
-        navigator: {
-            enabled: false, // Set to false to hide the navigator
-        },
-        credits: {
-            enabled: false,
-        },
-        tooltip: {
-            enabled: false,
-            positioner: () => ({ x: 60, y: 0 })
-        },
-        series: [{
-            type: 'candlestick',
-            id: 'btc',
-            name: 'BTC',
-            lastPrice: {
-                enabled: true,
-                label: {
-                    enabled: true,
-                    align: 'left',
-                    x: 8
-                }
-            },
-            data: props.data && props.data.map((d) => {
-                return [
-                    new Date(d.date).getTime(),
-                    d.open,
-                    d.high,
-                    d.low,
-                    d.adjusted_close
-                ]
-            }),
-        }],
-    };
+import HighchartsComponent, { StockData } from '@/components/candlestickChart';
+import { AxiosError } from 'axios';
+import Button from '@/components/button';
+import { router } from 'expo-router';
 
-    const chartOptionsStr = JSON.stringify(chartOptions);
+type Props = {
+    fetchEODData: (val: string) => Promise<StockData[]>
+}
 
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-        <script src="https://code.highcharts.com/stock/highstock.js"></script>
-        <script src="https://code.highcharts.com/stock/indicators/indicators-all.js"></script>
-        <script src="https://code.highcharts.com/stock/modules/accessibility.js"></script>
-          <script>
-            document.addEventListener('DOMContentLoaded', function () {
-              const chart = Highcharts.stockChart('container', ${chartOptionsStr});
-              chart.series[0].update({
-                point: {
-                  events: {
-                    mouseOver: function () {
-                      const pointData = {
-                        x: this.x,
-                        open: this.open,
-                        high: this.high,
-                        low: this.low,
-                        close: this.close,
-                      };
-                      window.ReactNativeWebView.postMessage(JSON.stringify({
-                        event: 'pointHover',
-                        data: pointData
-                      }));
-                    },
-                    mouseOut: function () {
-                        window.ReactNativeWebView.postMessage(JSON.stringify({
-                            event: 'hoverOut'
-                        }));
-                    }
-                  }
-                }
-              });            
-            });
-          </script>
-        </head>
-        <body>
-          <div id="container" class="chart" style="width:100%; height:100%;"></div>
-        </body>
-      </html>
-    `;
+type EodDataType = {
+    p: number,
+    dc: number
+}
 
-    const [webViewHeight, setWebViewHeight] = useState(0);
-
-    return (
-        // <View style={[styles.webContainer, { maxHeight: '50%', backgroundColor: 'red' }]}>
-        <WebView
-            scrollEnabled={false}
-            // nestedScrollEnabled
-            originWhitelist={['*']}
-            source={{ html: htmlContent }}
-            style={[styles.webContainer]}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            containerStyle={{ height: webViewHeight }}
-            injectedJavaScript="window.ReactNativeWebView.postMessage(JSON.stringify({event: 'changeHeight', height: Math.max(document.body.offsetHeight, document.body.scrollHeight)}));"
-            onMessage={event => {
-                const message = JSON.parse(event.nativeEvent.data);
-                if (message.event === 'pointHover') {
-                    props.onPointHover(message.data);
-                }
-                if (message.event === 'hoverOut') {
-                    props.onHoverOut();
-                }
-                if (message.event === 'changeHeight') {
-                    setWebViewHeight(Number(message.height));
-                }
-            }}
-        />
-        // </View>
-    );
+type StylesType = {
+    container: ViewStyle,
+    smallText: (color?: string) => TextStyle,
+    xtraLargeText: TextStyle,
+    rowContainer: TextStyle,
+    ohlcContainer: ViewStyle,
+    half: ViewStyle,
+    bottomTab: ViewStyle,
+    largeText: TextStyle,
+    splitContainer: ViewStyle
 };
 
-const BitcoinComponent = (props) => {
-    const payload = { "action": "subscribe", "symbols": "BTC-USD" }
-    const priceData = useWebSocket('wss://ws.eodhistoricaldata.com/ws/crypto?api_token=demo', payload);
+type HoverDataType = {
+    hoverData: StockData,
+}
 
-    const [eodData, setEodData] = useState([]);
-    const [hoverData, setHoverData] = useState(null);
+const HoverData = (props: HoverDataType) => {
+    const ohlcStyle = [styles.ohlcContainer, styles.half]
+
+    return (
+        <>
+            <Text>{props.hoverData.date}</Text>
+            <View style={styles.ohlcContainer}>
+                <View style={ohlcStyle}>
+                    <Text>Open: </Text>
+                    <Text>{props.hoverData.open}</Text>
+                </View>
+                <View style={ohlcStyle}>
+                    <Text>High: </Text>
+                    <Text>{props.hoverData.high}</Text>
+                </View>
+            </View>
+            <View style={styles.ohlcContainer}>
+                <View style={ohlcStyle}>
+                    <Text>Close: </Text>
+                    <Text>{props.hoverData.low}</Text>
+                </View>
+                <View style={ohlcStyle}>
+                    <Text>Low: </Text>
+                    <Text>{props.hoverData.high}</Text>
+                </View>
+            </View>
+        </>
+    )
+}
+
+const BitcoinComponent = (props: Props) => {
+    const priceData: EodDataType | null = useWebSocket('wss://ws.eodhistoricaldata.com/ws/crypto?api_token=demo');
+
+    const [eodData, setEodData] = useState<StockData[]>([]);
+    const [hoverData, setHoverData] = useState<StockData | null>(null);
     const [lastEvent, setLastEvent] = useState('mouseOut');
     const now = new Date()
     const from = `${now.getDate()}-${now.getMonth()}-${now.getFullYear() - 2}`
 
     useEffect(() => {
         props.fetchEODData(from).then(
-            (data) => {
+            (data: StockData[]) => {
                 setEodData(data)
             }
-        ).catch((error) => console.log(error, 'error'));
+        ).catch((error: AxiosError) => console.log(error, 'error'));
     }, []);
 
     useEffect(() => {
@@ -195,7 +90,7 @@ const BitcoinComponent = (props) => {
         }
     }, [lastEvent])
 
-    const onPointHover = (data) => {
+    const onPointHover = (data: StockData) => {
         const date = new Date(data.x).toString().slice(0, -8);
         setLastEvent('mouseOver')
         setHoverData({ ...data, date })
@@ -208,32 +103,10 @@ const BitcoinComponent = (props) => {
     return (
         <View>
             <ScrollView style={styles.container} >
-                {hoverData ?
+                {hoverData ? <HoverData hoverData={hoverData} />
+                    :
                     <>
-                        <Text>{hoverData.date}</Text>
-                        <View style={styles.ohlcContainer}>
-                            <View style={[styles.ohlcContainer, styles.half]}>
-                                <Text>Open: </Text>
-                                <Text>{hoverData.open}</Text>
-                            </View>
-                            <View style={[styles.ohlcContainer, styles.half]}>
-                                <Text>High: </Text>
-                                <Text>{hoverData.high}</Text>
-                            </View>
-                        </View>
-                        <View style={styles.ohlcContainer}>
-                            <View style={[styles.ohlcContainer, styles.half]}>
-                                <Text>Close: </Text>
-                                <Text>{hoverData.low}</Text>
-                            </View>
-                            <View style={[styles.ohlcContainer, styles.half]}>
-                                <Text>Low: </Text>
-                                <Text>{hoverData.high}</Text>
-                            </View>
-                        </View>
-                    </> :
-                    <>
-                        <Text style={styles.smallText}>Harga Bitcoin</Text>
+                        <Text style={styles.smallText()}>Harga Bitcoin</Text>
                         {priceData ?
                             <View style={styles.rowContainer}>
                                 <Text style={styles.xtraLargeText}>USD {priceData.p}</Text>
@@ -252,25 +125,27 @@ const BitcoinComponent = (props) => {
                                     <Text style={styles.smallText(priceData.dc < 0 ? 'red' : 'green')}>{priceData.dc}%</Text>
                                 </View>
                             </View>
-                            : <Text>Loading...</Text>}
+                            :
+                            <Text>Loading...</Text>
+                        }
                     </>}
                 <HighchartsComponent data={eodData} onPointHover={onPointHover} onHoverOut={onHoverOut} />
             </ScrollView>
             <View style={styles.bottomTab}>
-                <View style={{ width: '40%' }}>
+                <View style={styles.splitContainer}>
                     <Text style={styles.largeText}>USD 64000</Text>
-                    <TouchableOpacity style={styles.button('red')} onPress={() => router.push('/transaction')}><Text style={{ fontSize: 16, color: 'white', textAlign: 'center' }}>Buy</Text></TouchableOpacity>
+                    <Button title="Buy" color="red" onPress={() => router.push('/transaction')}></Button>
                 </View>
-                <View style={{ width: '40%' }}>
+                <View style={styles.splitContainer}>
                     <Text style={styles.largeText}>USD 63000</Text>
-                    <TouchableOpacity style={styles.button('blue')}><Text style={{ fontSize: 16, color: 'white', textAlign: 'center' }}>Sell</Text></TouchableOpacity>
+                    <Button title="Sell" color="blue" onPress={() => { }} />
                 </View>
             </View>
         </View>
     )
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create<StylesType>({
     container: {
         backgroundColor: 'white',
         marginHorizontal: 16,
@@ -292,9 +167,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 10
     },
-    webContainer: {
-        flex: 1,
-    },
     ohlcContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -312,8 +184,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         shadowRadius: 2,
         shadowOffset: {
-          width: 0,
-          height: -3,
+            width: 0,
+            height: -3,
         },
         shadowColor: '#000000',
         elevation: 4,
@@ -326,13 +198,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center'
     },
-    button: (color) => ({
-        width: '100%',
-        backgroundColor: color,
-        borderRadius: 4,
-        paddingVertical: 10,
-        marginTop: 10
-    })
+    splitContainer: { width: '40%' }
 })
 
 export default BitcoinComponent

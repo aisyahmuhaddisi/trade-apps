@@ -6,14 +6,14 @@ const useWebSocket = (url: string) => {
     const [priceData, setPriceData] = useState(null);
     const [waitTime, setWaitTime] = useState(0);
 
-    const dataChanges = (data) => {
+    const dataChanges = (data: string) => {
         const jsonData = JSON.parse(data);
         setPriceData({ ...jsonData, dc: Math.floor(jsonData.dc * 100) / 100, p: Math.floor(jsonData.p * 100) / 100 })
     };
 
     const dataChangesThrottled = useRef(throttle(dataChanges, waitTime));
 
-    const initiateWebSocket = (socket) => {
+    const initiateWebSocket = (socket: WebSocket) => {
         socket.addEventListener('open', function (event) {
             setWaitTime(8000)
             socket.send(JSON.stringify({ "action": "subscribe", "symbols": "BTC-USD" }))
