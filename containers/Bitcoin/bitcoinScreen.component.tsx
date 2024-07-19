@@ -1,7 +1,7 @@
 import useWebSocket from '@/hooks/useWebSocket';
 import { Ionicons } from '@expo/vector-icons'
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native'
 import { WebView } from 'react-native-webview';
 
 const HighchartsComponent = (props) => {
@@ -51,13 +51,16 @@ const HighchartsComponent = (props) => {
             }
         },
         chart: {
-            height: 1000,
+            height: '100%',
         },
         rangeSelector: {
             enabled: false,
         },
         navigator: {
             enabled: false, // Set to false to hide the navigator
+        },
+        credits: {
+            enabled: false,
         },
         tooltip: {
             enabled: false,
@@ -108,7 +111,6 @@ const HighchartsComponent = (props) => {
       <html>
         <head>
         <script src="https://code.highcharts.com/stock/highstock.js"></script>
-        <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
         <script src="https://code.highcharts.com/stock/indicators/indicators-all.js"></script>
         <script src="https://code.highcharts.com/stock/modules/accessibility.js"></script>
           <script>
@@ -148,24 +150,27 @@ const HighchartsComponent = (props) => {
     `;
 
     return (
-        <View style={styles.webContainer}>
-            <WebView
-                originWhitelist={['*']}
-                source={{ html: htmlContent }}
-                style={styles.webContainer}
-                javaScriptEnabled={true}
-                domStorageEnabled={true}
-                onMessage={event => {
-                    const message = JSON.parse(event.nativeEvent.data);
-                    if (message.event === 'pointHover') {
-                        props.onPointHover(message.data);
-                    }
-                    if (message.event === 'hoverOut') {
-                        props.onHoverOut();
-                    }
-                }}
-            />
-        </View>
+        // <View style={[styles.webContainer, { maxHeight: '50%', backgroundColor: 'red' }]}>
+        <WebView
+        scrollEnabled={false}
+            // nestedScrollEnabled
+            originWhitelist={['*']}
+            source={{ html: htmlContent }}
+            style={[styles.webContainer, {height: 800}]}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            containerStyle={{ maxHeight: '50%' }}
+            onMessage={event => {
+                const message = JSON.parse(event.nativeEvent.data);
+                if (message.event === 'pointHover') {
+                    props.onPointHover(message.data);
+                }
+                if (message.event === 'hoverOut') {
+                    props.onHoverOut();
+                }
+            }}
+        />
+        // </View>
     );
 };
 
@@ -210,7 +215,7 @@ const BitcoinComponent = (props) => {
     }
 
     return (
-        <View style={styles.container} >
+        <ScrollView style={styles.container} >
             {hoverData ?
                 <>
                     <Text>{hoverData.date}</Text>
@@ -258,7 +263,8 @@ const BitcoinComponent = (props) => {
                         : <Text>Loading...</Text>}
                 </>}
             <HighchartsComponent data={eodData} onPointHover={onPointHover} onHoverOut={onHoverOut} />
-        </View>
+            <View style={{ color: 'red', bottom: 0 }}><Text>Bottomsdsdfsdffa</Text></View>
+        </ScrollView>
     )
 }
 
@@ -267,7 +273,8 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'white',
         marginHorizontal: 16,
-        marginVertical: 20
+        marginVertical: 20,
+        flexGrow: 1
     },
     smallText: (color) => ({
         fontSize: 14,
@@ -285,7 +292,7 @@ const styles = StyleSheet.create({
         gap: 10
     },
     webContainer: {
-        flex: 1
+        flex: 1,
     },
     ohlcContainer: {
         flexDirection: 'row',

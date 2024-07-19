@@ -28,7 +28,6 @@ const useWebSocket = (url: string) => {
         let socket = new WebSocket(url);
 
         const subscription = AppState.addEventListener('change', nextAppState => {
-            console.log(AppState.currentState, 'currentstate')
             if (
                 AppState.currentState.match(/inactive|background/)
             ) {

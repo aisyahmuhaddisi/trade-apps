@@ -1,11 +1,6 @@
 import React from 'react'
-import { Image, StyleSheet, Platform, View, useWindowDimensions, TouchableOpacity, Animated, Text } from 'react-native';
+import { StyleSheet, View, useWindowDimensions, TouchableOpacity, Animated, Text } from 'react-native';
 import { TabView, SceneMap } from 'react-native-tab-view';
-
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 
 import BitcoinContainer from '@/containers/Bitcoin/bitcoinScreen.container';
 
@@ -21,7 +16,6 @@ const renderScene = SceneMap({
 const _renderTabBar = (props, state) => {
   const inputRange = props.navigationState.routes.map((x, i) => i);
 
-  console.log(inputRange, 'cek')
   return (
     <View style={styles.tabBar}>
       {props.navigationState.routes.map((route, i) => {
