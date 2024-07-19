@@ -1,6 +1,7 @@
 import React from 'react'
 import { StyleSheet, View, useWindowDimensions, TouchableOpacity, Animated, Text } from 'react-native';
 import { TabView, SceneMap } from 'react-native-tab-view';
+import { Stack } from 'expo-router/stack';
 
 import BitcoinContainer from '@/containers/Bitcoin/bitcoinScreen.container';
 
@@ -17,25 +18,27 @@ const _renderTabBar = (props, state) => {
   const inputRange = props.navigationState.routes.map((x, i) => i);
 
   return (
-    <View style={styles.tabBar}>
-      {props.navigationState.routes.map((route, i) => {
-        const opacity = props.position.interpolate({
-          inputRange,
-          outputRange: inputRange.map((inputIndex) =>
-            inputIndex === i ? 1 : 0.5
-          ),
-        });
-        const isActive = i === state.index
+    <>
+      <View style={styles.tabBar}>
+        {props.navigationState.routes.map((route, i) => {
+          const opacity = props.position.interpolate({
+            inputRange,
+            outputRange: inputRange.map((inputIndex) =>
+              inputIndex === i ? 1 : 0.5
+            ),
+          });
+          const isActive = i === state.index
 
-        return (
-          <TouchableOpacity
-            style={styles.tabItem(isActive)}
-            onPress={() => state.setIndex(i)}>
-            <Animated.Text style={{ opacity }}>{route.title}</Animated.Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
+          return (
+            <TouchableOpacity
+              style={styles.tabItem(isActive)}
+              onPress={() => state.setIndex(i)}>
+              <Animated.Text style={{ opacity }}>{route.title}</Animated.Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </>
   );
 };
 

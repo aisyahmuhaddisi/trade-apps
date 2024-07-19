@@ -1,7 +1,8 @@
 import useWebSocket from '@/hooks/useWebSocket';
 import { Ionicons } from '@expo/vector-icons'
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { WebView } from 'react-native-webview';
 
 const HighchartsComponent = (props) => {
@@ -64,20 +65,6 @@ const HighchartsComponent = (props) => {
         },
         tooltip: {
             enabled: false,
-            // shape: 'square',
-            // split: false,
-            // shared: true,
-            // headerShape: 'callout',
-            // shadow: false,
-            //             format: `<span style="font-size: 1.4em">{point.series.name}</span>
-            // O<span style="color:${colorTemplate}";>{point.open}</span>
-            // H<span style="color:${colorTemplate}";>{point.high}</span>
-            // L<span style="color:${colorTemplate}";>{point.low}</span>
-            // C<span style="color:${colorTemplate}";>{point.close}
-            // {(subtract point.open point.close):.2f}
-            // {(multiply (divide (subtract point.open point.close) point.close) 100):.2f}%
-            // </span>
-            // <br>`,
             positioner: () => ({ x: 60, y: 0 })
         },
         series: [{
@@ -149,17 +136,20 @@ const HighchartsComponent = (props) => {
       </html>
     `;
 
+    const [webViewHeight, setWebViewHeight] = useState(0);
+
     return (
         // <View style={[styles.webContainer, { maxHeight: '50%', backgroundColor: 'red' }]}>
         <WebView
-        scrollEnabled={false}
+            scrollEnabled={false}
             // nestedScrollEnabled
             originWhitelist={['*']}
             source={{ html: htmlContent }}
-            style={[styles.webContainer, {height: 800}]}
+            style={[styles.webContainer]}
             javaScriptEnabled={true}
             domStorageEnabled={true}
-            containerStyle={{ maxHeight: '50%' }}
+            containerStyle={{ height: webViewHeight }}
+            injectedJavaScript="window.ReactNativeWebView.postMessage(JSON.stringify({event: 'changeHeight', height: Math.max(document.body.offsetHeight, document.body.scrollHeight)}));"
             onMessage={event => {
                 const message = JSON.parse(event.nativeEvent.data);
                 if (message.event === 'pointHover') {
@@ -168,6 +158,9 @@ const HighchartsComponent = (props) => {
                 if (message.event === 'hoverOut') {
                     props.onHoverOut();
                 }
+                if (message.event === 'changeHeight') {
+                    setWebViewHeight(Number(message.height));
+                }
             }}
         />
         // </View>
@@ -175,9 +168,7 @@ const HighchartsComponent = (props) => {
 };
 
 const BitcoinComponent = (props) => {
-    // const payload: Payload = { "type": "subscribe", "symbol": "AAPL" }; // You can change this to any symbol you want to subscribe to
     const payload = { "action": "subscribe", "symbols": "BTC-USD" }
-    // const { data, error } = useWebSocket('wss://ws.finnhub.io?token=cq9n5t9r01qlu7f35pf0cq9n5t9r01qlu7f35pfg', payload);
     const priceData = useWebSocket('wss://ws.eodhistoricaldata.com/ws/crypto?api_token=demo', payload);
 
     const [eodData, setEodData] = useState([]);
@@ -215,66 +206,76 @@ const BitcoinComponent = (props) => {
     }
 
     return (
-        <ScrollView style={styles.container} >
-            {hoverData ?
-                <>
-                    <Text>{hoverData.date}</Text>
-                    <View style={styles.ohlcContainer}>
-                        <View style={[styles.ohlcContainer, styles.half]}>
-                            <Text>Open: </Text>
-                            <Text>{hoverData.open}</Text>
-                        </View>
-                        <View style={[styles.ohlcContainer, styles.half]}>
-                            <Text>High: </Text>
-                            <Text>{hoverData.high}</Text>
-                        </View>
-                    </View>
-                    <View style={styles.ohlcContainer}>
-                        <View style={[styles.ohlcContainer, styles.half]}>
-                            <Text>Close: </Text>
-                            <Text>{hoverData.low}</Text>
-                        </View>
-                        <View style={[styles.ohlcContainer, styles.half]}>
-                            <Text>Low: </Text>
-                            <Text>{hoverData.high}</Text>
-                        </View>
-                    </View>
-                </> :
-                <>
-                    <Text style={styles.smallText}>Harga Bitcoin</Text>
-                    {priceData ?
-                        <View style={styles.rowContainer}>
-                            <Text style={styles.xtraLargeText}>USD {priceData.p}</Text>
-                            <View style={{ flexDirection: 'row' }}>
-                                {priceData.dc < 0 ?
-                                    <Ionicons
-                                        name="caret-down-sharp"
-                                        size={18}
-                                        color="re
-                                    /> :
-                                    <Ionicons
-                                        name="caret-up-sharp"
-                                        size={18}
-                                        color="green"
-                                    />}
-                                <Text style={styles.smallText(priceData.dc < 0 ? 'red' : 'green')}>{priceData.dc}%</Text>
+        <View>
+            <ScrollView style={styles.container} >
+                {hoverData ?
+                    <>
+                        <Text>{hoverData.date}</Text>
+                        <View style={styles.ohlcContainer}>
+                            <View style={[styles.ohlcContainer, styles.half]}>
+                                <Text>Open: </Text>
+                                <Text>{hoverData.open}</Text>
+                            </View>
+                            <View style={[styles.ohlcContainer, styles.half]}>
+                                <Text>High: </Text>
+                                <Text>{hoverData.high}</Text>
                             </View>
                         </View>
-                        : <Text>Loading...</Text>}
-                </>}
-            <HighchartsComponent data={eodData} onPointHover={onPointHover} onHoverOut={onHoverOut} />
-            <View style={{ color: 'red', bottom: 0 }}><Text>Bottomsdsdfsdffa</Text></View>
-        </ScrollView>
+                        <View style={styles.ohlcContainer}>
+                            <View style={[styles.ohlcContainer, styles.half]}>
+                                <Text>Close: </Text>
+                                <Text>{hoverData.low}</Text>
+                            </View>
+                            <View style={[styles.ohlcContainer, styles.half]}>
+                                <Text>Low: </Text>
+                                <Text>{hoverData.high}</Text>
+                            </View>
+                        </View>
+                    </> :
+                    <>
+                        <Text style={styles.smallText}>Harga Bitcoin</Text>
+                        {priceData ?
+                            <View style={styles.rowContainer}>
+                                <Text style={styles.xtraLargeText}>USD {priceData.p}</Text>
+                                <View style={{ flexDirection: 'row' }}>
+                                    {priceData.dc < 0 ?
+                                        <Ionicons
+                                            name="caret-down-sharp"
+                                            size={18}
+                                            color="red"
+                                        /> :
+                                        <Ionicons
+                                            name="caret-up-sharp"
+                                            size={18}
+                                            color="green"
+                                        />}
+                                    <Text style={styles.smallText(priceData.dc < 0 ? 'red' : 'green')}>{priceData.dc}%</Text>
+                                </View>
+                            </View>
+                            : <Text>Loading...</Text>}
+                    </>}
+                <HighchartsComponent data={eodData} onPointHover={onPointHover} onHoverOut={onHoverOut} />
+            </ScrollView>
+            <View style={styles.bottomTab}>
+                <View style={{ width: '40%' }}>
+                    <Text style={styles.largeText}>USD 64000</Text>
+                    <TouchableOpacity style={styles.button('red')} onPress={() => router.push('/transaction')}><Text style={{ fontSize: 16, color: 'white', textAlign: 'center' }}>Buy</Text></TouchableOpacity>
+                </View>
+                <View style={{ width: '40%' }}>
+                    <Text style={styles.largeText}>USD 63000</Text>
+                    <TouchableOpacity style={styles.button('blue')}><Text style={{ fontSize: 16, color: 'white', textAlign: 'center' }}>Sell</Text></TouchableOpacity>
+                </View>
+            </View>
+        </View>
     )
 }
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
         backgroundColor: 'white',
         marginHorizontal: 16,
         marginVertical: 20,
-        flexGrow: 1
+        height: '80%'
     },
     smallText: (color) => ({
         fontSize: 14,
@@ -301,7 +302,37 @@ const styles = StyleSheet.create({
     },
     half: {
         width: '48%'
-    }
+    },
+    bottomTab: {
+        bottom: 0,
+        position: 'absolute',
+        width: '100%',
+        flexDirection: 'row',
+        justifyContent: 'space-evenly',
+        backgroundColor: 'white',
+        shadowRadius: 2,
+        shadowOffset: {
+          width: 0,
+          height: -3,
+        },
+        shadowColor: '#000000',
+        elevation: 4,
+        shadowOpacity: 0.3,
+    },
+    largeText: {
+        fontSize: 16,
+        color: 'black',
+        marginTop: 8,
+        fontWeight: 'bold',
+        textAlign: 'center'
+    },
+    button: (color) => ({
+        width: '100%',
+        backgroundColor: color,
+        borderRadius: 4,
+        paddingVertical: 10,
+        marginTop: 10
+    })
 })
 
 export default BitcoinComponent
