@@ -250,7 +250,7 @@ const BitcoinComponent = (props) => {
                                     <Ionicons
                                         name="caret-down-sharp"
                                         size={18}
-                                        color="red"
+                                        color="re
                                     /> :
                                     <Ionicons
                                         name="caret-up-sharp"
