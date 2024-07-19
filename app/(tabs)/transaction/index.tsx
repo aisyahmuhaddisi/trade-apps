@@ -3,7 +3,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Text, View, TouchableOpacity, StyleSheet } from 'react-native'
-
 import NumericPad from 'react-native-numeric-pad'
 
 type NumpadRef = {

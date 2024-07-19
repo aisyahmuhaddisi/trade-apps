@@ -9,7 +9,7 @@ import Button from '@/components/button';
 import { router } from 'expo-router';
 
 type Props = {
-    fetchEODData: (val: string) => Promise<StockData[]>
+    fetchEODData: (val: string, val1: string) => Promise<StockData[]>
 }
 
 type EodDataType = {
@@ -26,7 +26,8 @@ type StylesType = {
     half: ViewStyle,
     bottomTab: ViewStyle,
     largeText: TextStyle,
-    splitContainer: ViewStyle
+    splitContainer: ViewStyle,
+    filterPills: ViewStyle
 };
 
 type HoverDataType = {
@@ -69,16 +70,20 @@ const BitcoinComponent = (props: Props) => {
     const [eodData, setEodData] = useState<StockData[]>([]);
     const [hoverData, setHoverData] = useState<StockData | null>(null);
     const [lastEvent, setLastEvent] = useState('mouseOut');
+    const [period, setPeriod] = useState('m')
+
     const now = new Date()
-    const from = `${now.getDate()}-${now.getMonth()}-${now.getFullYear() - 2}`
 
     useEffect(() => {
-        props.fetchEODData(from).then(
+        const years = now.getFullYear() - 3;
+        const from = `${now.getDate()}-${now.getMonth()}-${period === 'd' ? years : years + 2}`
+
+        props.fetchEODData(from, period).then(
             (data: StockData[]) => {
                 setEodData(data)
             }
         ).catch((error: AxiosError) => console.log(error, 'error'));
-    }, []);
+    }, [period]);
 
     useEffect(() => {
         if (hoverData) {
@@ -130,15 +135,29 @@ const BitcoinComponent = (props: Props) => {
                         }
                     </>}
                 <HighchartsComponent data={eodData} onPointHover={onPointHover} onHoverOut={onHoverOut} />
+                <View style={{ marginTop: 20, flexDirection: 'row', gap: 20 }}>
+                    <Button
+                        title="Daily"
+                        onPress={() => {
+                            setPeriod('d')
+                        }}
+                        color={period === 'd' ? "lightblue" : "white"}
+                        textColor="black"
+                        style={styles.filterPills}
+                    />
+                    <Button title="Weekly" onPress={() => { setPeriod('w') }} color={period === 'w' ? "lightblue" : "white"} textColor="black" style={styles.filterPills} />
+                    <Button title="Monthly" onPress={() => { setPeriod('m') }} color={period === 'm' ? "lightblue" : "white"} textColor="black" style={styles.filterPills} />
+                    <Button title="Yearly" onPress={() => { setPeriod('y') }} color={period === 'y' ? "lightblue" : "white"} textColor="black" style={styles.filterPills} />
+                </View>
             </ScrollView>
             <View style={styles.bottomTab}>
                 <View style={styles.splitContainer}>
                     <Text style={styles.largeText}>USD 64000</Text>
-                    <Button title="Buy" color="red" onPress={() => router.push('/transaction')}></Button>
+                    <Button title="Buy" color="red" textColor="white" onPress={() => router.push('/transaction')}></Button>
                 </View>
                 <View style={styles.splitContainer}>
                     <Text style={styles.largeText}>USD 63000</Text>
-                    <Button title="Sell" color="blue" onPress={() => { }} />
+                    <Button title="Sell" color="blue" textColor="white" onPress={() => { }} />
                 </View>
             </View>
         </View>
@@ -198,7 +217,17 @@ const styles = StyleSheet.create<StylesType>({
         fontWeight: 'bold',
         textAlign: 'center'
     },
-    splitContainer: { width: '40%' }
+    splitContainer: {
+        width: '40%'
+    },
+    filterPills: {
+        width: '20%',
+        borderStyle: 'solid',
+        borderColor: 'lightgray',
+        borderWidth: 1,
+        alignItems: 'center',
+        color: 'black'
+    }
 })
 
 export default BitcoinComponent

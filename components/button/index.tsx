@@ -2,12 +2,13 @@ import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from "react-
 
 type StylesType = {
     button: (color: string) => ViewStyle,
-    text: TextStyle
+    text: (color: string) => TextStyle
 };
 
 type Props = {
     title: string,
     color: string,
+    textColor?: string,
     onPress: () => void,
     style?: TextStyle
 };
@@ -15,7 +16,7 @@ type Props = {
 const Button = (props: Props) => {
     return (
         <TouchableOpacity style={[styles.button(props.color), props.style]} onPress={props.onPress} >
-            <Text style={styles.text}>{props.title}</Text>
+            <Text style={styles.text(props.textColor)}>{props.title}</Text>
         </TouchableOpacity >
     )
 };
@@ -28,11 +29,11 @@ const styles = StyleSheet.create<StylesType>({
         paddingVertical: 10,
         marginTop: 10
     }),
-    text: {
+    text: (color) => ({
         fontSize: 16,
-        color: 'white',
+        color: color || 'black',
         textAlign: 'center'
-    }
+    })
 });
 
 export default Button;

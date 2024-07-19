@@ -156,7 +156,7 @@ const HighchartsComponent = (props: Props) => {
             style={[styles.webContainer]}
             javaScriptEnabled={true}
             domStorageEnabled={true}
-            containerStyle={{ height: webViewHeight }}
+            containerStyle={{ height: webViewHeight/3 }}
             injectedJavaScript="window.ReactNativeWebView.postMessage(JSON.stringify({event: 'changeHeight', height: Math.max(document.body.offsetHeight, document.body.scrollHeight)}));"
             onMessage={event => {
                 const message = JSON.parse(event.nativeEvent.data);
