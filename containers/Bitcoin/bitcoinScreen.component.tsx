@@ -70,7 +70,7 @@ const BitcoinComponent = (props: Props) => {
     const [eodData, setEodData] = useState<StockData[]>([]);
     const [hoverData, setHoverData] = useState<StockData | null>(null);
     const [lastEvent, setLastEvent] = useState('mouseOut');
-    const [period, setPeriod] = useState('m')
+    const [period, setPeriod] = useState('w')
 
     const now = new Date()
 

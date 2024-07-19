@@ -148,6 +148,7 @@ const HighchartsComponent = (props: Props) => {
       </html>
     `;
 
+
     return (
         <WebView
             scrollEnabled={false}

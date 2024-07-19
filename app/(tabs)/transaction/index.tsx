@@ -35,13 +35,7 @@ const Transaction = () => {
             <View
                 style={styles.numpadContainer}
             >
-                <Button style={styles.button} title="Confirm" color="blue" onPress={onPressButton} />
-                <TouchableOpacity style={styles.button} onPress={() => {
-                    resetValue()
-                    router.push('/')
-                }}>
-                    <Text style={{ fontSize: 16, color: 'white', textAlign: 'center' }}>Confirm</Text>
-                </TouchableOpacity>
+                <Button style={styles.button} title="Confirm" color="blue" textColor="white" onPress={onPressButton} />
                 <NumericPad
                     ref={numpadRef}
                     numLength={8}
